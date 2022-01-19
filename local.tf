@@ -30,7 +30,12 @@ locals {
   tags = merge(var.tags)
 
   ssh_commands = { for region in local.regions :
-    region => "ssh -i bastion.pem adminuser@${azurerm_public_ip.bastion[region].ip_address}"
+    region => merge({
+      bastion = "ssh -i bastion.pem adminuser@${azurerm_public_ip.bastion[region].ip_address}"
+    },
+    { for zone in [1,2,3] :
+      "zone${zone}" => "ssh -i vm.pem -o 'ProxyCommand ssh -W %h:%p -i bastion.pem adminuser@${azurerm_public_ip.bastion[region].ip_address}' adminuser@zone${zone}.${region}.test.com"
+    })
   }
 
 }
