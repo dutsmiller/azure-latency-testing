@@ -12,8 +12,8 @@ locals {
     "westus2"        = { cidr = "10.0.7.0/24" }
     "westus3"        = { cidr = "10.0.8.0/24" }
   }
- 
-  peers    =  [ for peers in setproduct(local.regions, local.regions) : peers if length(distinct(peers)) > 1 ]
+
+  peers = [for peers in setproduct(local.regions, local.regions) : peers if length(distinct(peers)) > 1]
   peer_map = { for peer in local.peers :
     "${peer.0}-${peer.1}" => {
       local  = peer.0
@@ -21,10 +21,16 @@ locals {
     }
   }
 
+  vms = merge(values({ for reg in local.regions :
+    reg => { for az in [1, 2, 3] :
+      "${reg}-${az}" => { region = reg, zone = az }
+    }
+  })...)
+
   tags = merge(var.tags)
 
   ssh_commands = { for region in local.regions :
-     region => "ssh -i bastion.pem adminuser@${azurerm_public_ip.bastion[region].ip_address}" 
+    region => "ssh -i bastion.pem adminuser@${azurerm_public_ip.bastion[region].ip_address}"
   }
 
 }

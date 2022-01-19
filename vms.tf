@@ -10,61 +10,34 @@ resource "local_file" "vm_ssh_private_key" {
   file_permission = "0600"
 }
 
-resource "azurerm_network_interface" "private_zone_1" {
-  for_each = local.regions
+resource "azurerm_network_interface" "private" {
+  for_each = local.vms
 
-  name                = "private-1"
-  resource_group_name = azurerm_resource_group.region[each.value].name
-  location            = azurerm_resource_group.region[each.value].location
+  depends_on = [azurerm_subnet.private]
 
-  ip_configuration {
-    name                          = "private"
-    subnet_id                     = azurerm_subnet.private[each.value].id
-    private_ip_address_allocation = "Static"
-    private_ip_address            = cidrhost(azurerm_subnet.private[each.value].address_prefixes.0, 10)
-  }
-}
-
-resource "azurerm_network_interface" "private_zone_2" {
-  for_each = local.regions
-
-  name                = "private-2"
-  resource_group_name = azurerm_resource_group.region[each.value].name
-  location            = azurerm_resource_group.region[each.value].location
+  name                = "private-${each.value.zone}"
+  resource_group_name = azurerm_resource_group.region[each.value.region].name
+  location            = azurerm_resource_group.region[each.value.region].location
 
   ip_configuration {
     name                          = "private"
-    subnet_id                     = azurerm_subnet.private[each.value].id
+    subnet_id                     = azurerm_subnet.private[each.value.region].id
     private_ip_address_allocation = "Static"
-    private_ip_address            = cidrhost(azurerm_subnet.private[each.value].address_prefixes.0, 11)
-  }
-}
-resource "azurerm_network_interface" "private_zone_3" {
-  for_each = local.regions
-
-  name                = "private-3"
-  resource_group_name = azurerm_resource_group.region[each.value].name
-  location            = azurerm_resource_group.region[each.value].location
-
-  ip_configuration {
-    name                          = "private"
-    subnet_id                     = azurerm_subnet.private[each.value].id
-    private_ip_address_allocation = "Static"
-    private_ip_address            = cidrhost(azurerm_subnet.private[each.value].address_prefixes.0, 12)
+    private_ip_address            = cidrhost(azurerm_subnet.private[each.value.region].address_prefixes.0, (10 + "${each.value.zone}"))
   }
 }
 
-/*resource "azurerm_linux_virtual_machine" "private_zone_1" {
-  for_each = local.regions
+resource "azurerm_linux_virtual_machine" "private" {
+  for_each = local.vms
 
-  name                = "${each.key}-1"
-  resource_group_name = azurerm_resource_group.region[each.value].name
-  location            = azurerm_resource_group.region[each.value].location
+  name                = "${each.value.zone}-1"
+  resource_group_name = azurerm_resource_group.region[each.value.region].name
+  location            = azurerm_resource_group.region[each.value.region].location
   zone                = 1
   size                = "Standard_B1s"
   admin_username      = "adminuser"
   network_interface_ids = [
-    azurerm_network_interface.private_zone_1[each.value].id,
+    azurerm_network_interface.private[each.key].id,
   ]
 
   admin_ssh_key {
@@ -86,68 +59,3 @@ resource "azurerm_network_interface" "private_zone_3" {
 
   tags = local.tags
 }
-
-resource "azurerm_linux_virtual_machine" "private_zone_2" {
-  for_each = local.regions
-
-  name                = "${each.key}-2"
-  resource_group_name = azurerm_resource_group.region[each.value].name
-  location            = azurerm_resource_group.region[each.value].location
-  zone                = 2
-  size                = "Standard_B1s"
-  admin_username      = "adminuser"
-  network_interface_ids = [
-    azurerm_network_interface.private_zone_2[each.value].id,
-  ]
-
-  admin_ssh_key {
-    username   = "adminuser"
-    public_key = tls_private_key.vm.public_key_openssh
-  }
-
-  os_disk {
-    caching              = "ReadWrite"
-    storage_account_type = "Standard_LRS"
-  }
-
-  source_image_reference {
-    publisher = "Canonical"
-    offer     = "UbuntuServer"
-    sku       = "16.04-LTS"
-    version   = "latest"
-  }
-
-  tags = local.tags
-}
-resource "azurerm_linux_virtual_machine" "private_zone_3" {
-  for_each = local.regions
-
-  name                = "${each.key}-3"
-  resource_group_name = azurerm_resource_group.region[each.value].name
-  location            = azurerm_resource_group.region[each.value].location
-  zone                = 1
-  size                = "Standard_B1s"
-  admin_username      = "adminuser"
-  network_interface_ids = [
-    azurerm_network_interface.private_zone_3[each.value].id,
-  ]
-
-  admin_ssh_key {
-    username   = "adminuser"
-    public_key = tls_private_key.vm.public_key_openssh
-  }
-
-  os_disk {
-    caching              = "ReadWrite"
-    storage_account_type = "Standard_LRS"
-  }
-
-  source_image_reference {
-    publisher = "Canonical"
-    offer     = "UbuntuServer"
-    sku       = "16.04-LTS"
-    version   = "latest"
-  }
-
-  tags = local.tags
-}*/

@@ -1,6 +1,6 @@
 variable "regions" {
   description = "List of regions to deploy"
-  type        = list
+  type        = list(any)
   default     = []
 }
 
