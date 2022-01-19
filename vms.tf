@@ -13,7 +13,7 @@ resource "local_file" "vm_ssh_private_key" {
 resource "azurerm_network_interface" "private" {
   for_each = local.vms
 
-  depends_on = [azurerm_subnet.private]
+  depends_on = [ azurerm_subnet_network_security_group_association.private ]
 
   name                = "private-${each.value.zone}"
   resource_group_name = azurerm_resource_group.region[each.value.region].name
@@ -30,7 +30,7 @@ resource "azurerm_network_interface" "private" {
 resource "azurerm_linux_virtual_machine" "private" {
   for_each = local.vms
 
-  name                = "${each.value.zone}-1"
+  name                = "${each.value.region}-${each.value.zone}"
   resource_group_name = azurerm_resource_group.region[each.value.region].name
   location            = azurerm_resource_group.region[each.value.region].location
   zone                = 1

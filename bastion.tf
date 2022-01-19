@@ -26,7 +26,7 @@ resource "azurerm_public_ip" "bastion" {
 resource "azurerm_network_interface" "bastion" {
   for_each = local.regions
 
-  depends_on = [azurerm_subnet.bastion]
+  depends_on = [ azurerm_subnet_network_security_group_association.bastion ]
 
   name                = "bastion"
   resource_group_name = azurerm_resource_group.region[each.value].name
@@ -46,7 +46,7 @@ resource "azurerm_network_interface" "bastion" {
 resource "azurerm_network_security_rule" "bastion_ssh" {
   for_each = local.regions
 
-  depends_on = [azurerm_network_security_group.bastion]
+  depends_on = [ azurerm_network_interface.bastion ]
 
   name                        = "bastion-ssh"
   priority                    = 100
@@ -64,7 +64,7 @@ resource "azurerm_network_security_rule" "bastion_ssh" {
 resource "azurerm_linux_virtual_machine" "bastion" {
   for_each = local.regions
 
-  depends_on = [azurerm_network_interface.bastion]
+  depends_on = [ azurerm_network_interface.bastion ]
 
   name                = "bastion-${each.key}-1"
   resource_group_name = azurerm_resource_group.region[each.value].name

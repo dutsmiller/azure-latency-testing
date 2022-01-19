@@ -6,6 +6,8 @@ resource "azurerm_private_dns_zone" "tld" {
 resource "azurerm_private_dns_zone_virtual_network_link" "region" {
   for_each = local.regions
 
+  depends_on = [ azurerm_virtual_network.region ]
+
   name                  = each.value
   resource_group_name   = azurerm_resource_group.main.name
   private_dns_zone_name = azurerm_private_dns_zone.tld.name

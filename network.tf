@@ -12,7 +12,9 @@ resource "azurerm_virtual_network" "region" {
 resource "azurerm_subnet" "bastion" {
   for_each = local.regions
 
-  depends_on = [azurerm_virtual_network.region]
+  depends_on = [
+    azurerm_private_dns_zone_virtual_network_link.region
+  ]
 
   name                 = "bastion"
   resource_group_name  = azurerm_resource_group.region[each.value].name
@@ -23,7 +25,9 @@ resource "azurerm_subnet" "bastion" {
 resource "azurerm_subnet" "private" {
   for_each = local.regions
 
-  depends_on = [azurerm_virtual_network.region]
+  depends_on = [
+    azurerm_subnet.bastion
+  ]
 
   name                 = "private"
   resource_group_name  = azurerm_resource_group.region[each.value].name
@@ -34,6 +38,10 @@ resource "azurerm_subnet" "private" {
 resource "azurerm_network_security_group" "private" {
   for_each = local.regions
 
+  depends_on = [
+    azurerm_subnet.private
+  ]
+
   name                = "private"
   resource_group_name = azurerm_resource_group.region[each.value].name
   location            = azurerm_resource_group.region[each.value].location
@@ -43,7 +51,9 @@ resource "azurerm_network_security_group" "private" {
 resource "azurerm_subnet_network_security_group_association" "private" {
   for_each = local.regions
 
-  depends_on = [azurerm_subnet.private]
+  depends_on = [
+    azurerm_network_security_group.private
+  ]
 
   subnet_id                 = azurerm_subnet.private[each.value].id
   network_security_group_id = azurerm_network_security_group.private[each.value].id
@@ -51,6 +61,10 @@ resource "azurerm_subnet_network_security_group_association" "private" {
 
 resource "azurerm_network_security_group" "bastion" {
   for_each = local.regions
+
+  depends_on = [
+    azurerm_subnet.bastion
+  ]
 
   name                = "bastion"
   resource_group_name = azurerm_resource_group.region[each.value].name
@@ -61,7 +75,9 @@ resource "azurerm_network_security_group" "bastion" {
 resource "azurerm_subnet_network_security_group_association" "bastion" {
   for_each = local.regions
 
-  depends_on = [azurerm_subnet.bastion]
+  depends_on = [
+    azurerm_network_security_group.bastion
+  ]
 
   subnet_id                 = azurerm_subnet.bastion[each.value].id
   network_security_group_id = azurerm_network_security_group.bastion[each.value].id
@@ -70,7 +86,10 @@ resource "azurerm_subnet_network_security_group_association" "bastion" {
 resource "azurerm_virtual_network_peering" "vnet" {
   for_each = local.peer_map
 
-  depends_on = [azurerm_virtual_network.region]
+  depends_on = [
+    azurerm_subnet_network_security_group_association.bastion,
+    azurerm_subnet_network_security_group_association.private
+  ]
 
   name                      = each.key
   resource_group_name       = azurerm_resource_group.region[each.value.local].name
