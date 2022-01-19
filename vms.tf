@@ -34,7 +34,7 @@ resource "azurerm_linux_virtual_machine" "private" {
   resource_group_name = azurerm_resource_group.region[each.value.region].name
   location            = azurerm_resource_group.region[each.value.region].location
   zone                = 1
-  size                = "Standard_B1ls"
+  size                = var.vm_size
   admin_username      = "adminuser"
   network_interface_ids = [
     azurerm_network_interface.private[each.key].id,

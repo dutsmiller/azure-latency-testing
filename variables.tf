@@ -10,6 +10,18 @@ variable "subscription_id" {
   default     = null
 }
 
+variable "bastion_size" {
+  description = "Azure VM size for bastion host"
+  type        = string
+  default     = "Standard_B1ls"
+}
+
+variable "vm_size" {
+  description = "Azure VM size for zone vms"
+  type        = string
+  default     = "Standard_B1ls"
+}
+
 variable "tags" {
   description = "resource tags"
   type        = map(string)

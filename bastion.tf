@@ -70,7 +70,7 @@ resource "azurerm_linux_virtual_machine" "bastion" {
   resource_group_name = azurerm_resource_group.region[each.value].name
   location            = azurerm_resource_group.region[each.value].location
   zone                = 1
-  size                = "Standard_B1ls"
+  size                = var.bastion_size
   admin_username      = "adminuser"
   network_interface_ids = [
     azurerm_network_interface.bastion[each.value].id,
